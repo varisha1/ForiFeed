@@ -1,0 +1,40 @@
+plugins {
+    id "com.android.application"
+    id "kotlin-android"
+    id "dev.flutter.flutter-gradle-plugin"
+    id "com.google.gms.google-services"
+}
+
+android {
+    namespace 'com.example.forif'  // Ensure this is added
+
+    compileSdkVersion 34  // Ensure compileSdkVersion is set to 34
+
+    defaultConfig {
+        applicationId "com.example.forif"
+        minSdkVersion 23   // Set to 23, as firebase_auth requires it
+        targetSdkVersion 33 // Set targetSdkVersion to 34
+
+        versionCode flutter.versionCode
+        versionName flutter.versionName
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+
+
+    buildTypes {
+        release {
+            signingConfig signingConfigs.debug  // Configure release signing
+        }
+    }
+}
+
+flutter {
+    source "../../"  // Ensure this is correct
+}

@@ -1,0 +1,49 @@
+{
+  "project_info": {
+    "project_number": "577943125304",
+    "firebase_url": "https://flutterfori-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "flutterfori",
+    "storage_bucket": "flutterfori.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:577943125304:android:4e2a26b41cec56254155cd",
+        "android_client_info": {
+          "package_name": "com.example.fori_feed"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAdqfi5cqIvwNEvxzpr5CIRGjmL0_gmOrg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:577943125304:android:91d0d883d9d277bd4155cd",
+        "android_client_info": {
+          "package_name": "com.example.forif"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAdqfi5cqIvwNEvxzpr5CIRGjmL0_gmOrg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
