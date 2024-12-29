@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:forif/selection.dart';
 import 'package:http/http.dart' as http;
 import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:xml/xml.dart' as xml;
@@ -213,8 +214,8 @@ class _NewsScreenState extends State<NewsScreen2>
       'https://humnews.pk/latest/feed/?paged=5': 'Hum News',
       'https://humnews.pk/latest/feed/?paged=6': 'Hum News',
       'https://humnews.pk/latest/feed/?paged=7': 'Hum News',
-      'https://www.express.pk/feed?paged=2': 'Express News',
       'https://www.express.pk/feed': 'Express News',
+      'https://www.express.pk/feed?paged=2': 'Express News',
       'https://arynews.tv/feed/': 'ARY News',
       'https://arynews.tv/feed/?paged=2': 'ARY News',
       'https://arynews.tv/feed/?paged=3': 'ARY News',
@@ -257,6 +258,7 @@ class _NewsScreenState extends State<NewsScreen2>
       'https://www.independent.co.uk/asia/rss': 'Independant - Asia',
       'https://www.independent.co.uk/rss': 'Independant - UK',
       'https://www.cbsnews.com/latest/rss/main': 'CBS',
+
     };
     setState(() {
       _isLoading = true;
@@ -337,11 +339,25 @@ class _NewsScreenState extends State<NewsScreen2>
               final link = item.findElements('link').first.text;
               final description = html_parser.parse(descriptionHtml).body?.text ?? '';
 
+              // Fetch the article's HTML to extract the image
+              String imageUrl = '';
+              try {
+                final articleResponse = await http.get(Uri.parse(link));
+                if (articleResponse.statusCode == 200) {
+                  final articleDocument = html_parser.parse(articleResponse.body);
+                  final imageElement = articleDocument.querySelector('meta[property="og:image"]');
+                  imageUrl = imageElement?.attributes['content'] ?? '';
+                }
+              } catch (e) {
+                print('Error fetching image for article: $title, $e');
+              }
+
               // Build article object
               Map<String, dynamic> article = {
                 'title': title,
                 'preview': description,
                 'fullContent': link,
+                'imageUrl': imageUrl, // Include the fetched image URL
                 'source': channel,
                 'comments': groupedComments[title] ?? [], // Attach pre-fetched comments
                 'dominantSentiment': groupedComments[title]?['dominantSentiment'] ?? 'neutral',
@@ -357,6 +373,7 @@ class _NewsScreenState extends State<NewsScreen2>
           });
         }
       }
+
     }
 
     setState(() {
@@ -723,7 +740,39 @@ class _NewsScreenState extends State<NewsScreen2>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Fori Feed'),
+        title: Text(
+          'Fori Feed',
+          style: TextStyle(
+            color: Colors.white, // Set the text color to white for contrast
+          ),
+        ),
+        // Set the AppBar background to a gradient with different shades of blue
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Color(0xFF1E3A8A), // Dark Blue
+                Color(0xFF3B82F6), // Medium Blue
+                Color(0xFF60A5FA), // Lighter Blue
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+        actions: [
+          // Heart outline icon on the right side of the AppBar
+          IconButton(
+            icon: Icon(Icons.favorite_border), // Heart outline icon
+            onPressed: () {
+              // Navigate to the selection screen when clicked
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => SelectionScreen()),
+              );
+            },
+          ),
+        ],
       ),
       drawer: NavBar(), // Replace Drawer with your NavBar component
       body: _widgetOptions(context)[_selectedIndex],
@@ -744,6 +793,8 @@ class _NewsScreenState extends State<NewsScreen2>
       ),
     );
   }
+
+
 
   Future<String> analyzeSentiment(String commentText) async {
     const String openAiApiUrl = 'https://api.openai.com/v1/chat/completions';

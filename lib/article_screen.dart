@@ -16,6 +16,7 @@ class _ArticleScreenState extends State<ArticleScreen> {
   final FlutterTts flutterTts = FlutterTts();
   late WebViewController _webViewController;
   bool isLoading = true;
+  bool isSpeaking = false; // Track whether the TTS is speaking
 
   @override
   void initState() {
@@ -41,7 +42,6 @@ class _ArticleScreenState extends State<ArticleScreen> {
             setState(() {
               isLoading = false;
             });
-            _speak();
           },
         ),
       )
@@ -58,9 +58,22 @@ class _ArticleScreenState extends State<ArticleScreen> {
 
   Future<void> _speak() async {
     String articleContent = await _getArticleContent();
+
     if (articleContent.isNotEmpty) {
-      print("Speaking content: $articleContent");
-      await flutterTts.speak(articleContent);
+      if (isSpeaking) {
+        // Stop the TTS if it's already speaking
+        await flutterTts.stop();
+        setState(() {
+          isSpeaking = false;
+        });
+      } else {
+        // Start speaking the entire content at once
+        print("Speaking content: $articleContent");
+        await flutterTts.speak(articleContent);
+        setState(() {
+          isSpeaking = true;
+        });
+      }
     } else {
       print("No article content found!");
     }
@@ -68,20 +81,21 @@ class _ArticleScreenState extends State<ArticleScreen> {
 
   Future<String> _getArticleContent() async {
     try {
-      // Run JavaScript to get article content
+      // Run JavaScript to get clean article content (only text from paragraphs, headings, etc.)
       final result = await _webViewController.runJavaScriptReturningResult("""
       (function() {
         var articleContent = '';
         var titleElement = document.querySelector('h1');
         if (titleElement) {
-          var nextElement = titleElement.nextElementSibling;
-          while (nextElement) {
-            if (nextElement.tagName === 'P' || nextElement.tagName === 'DIV' || nextElement.tagName === 'SECTION') {
-              articleContent += nextElement.innerText + ' ';
-            }
-            nextElement = nextElement.nextElementSibling;
-          }
+          articleContent += titleElement.innerText + ' ';
         }
+        
+        // Extract content from paragraphs, headings, and sections
+        var paragraphs = document.querySelectorAll('p, h2, h3, h4, h5, h6, section');
+        paragraphs.forEach(function(element) {
+          articleContent += element.innerText + ' ';
+        });
+        
         return JSON.stringify(articleContent.trim());
       })();
     """);
@@ -112,7 +126,7 @@ class _ArticleScreenState extends State<ArticleScreen> {
         backgroundColor: Colors.blue,
         actions: [
           IconButton(
-            icon: const Icon(Icons.volume_up),
+            icon: Icon(isSpeaking ? Icons.stop : Icons.volume_up), // Toggle icon based on speaking status
             onPressed: _speak,
           ),
         ],
