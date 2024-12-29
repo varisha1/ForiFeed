@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_database/firebase_database.dart'; // Import Firebase Database
+import 'package:firebase_database/firebase_database.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -23,31 +23,8 @@ class _SignupScreenState extends State<SignupScreen> {
     try {
       // Check if the passwords match
       if (passwordController.text == confirmPasswordController.text) {
-        // Create a new user with Firebase Authentication
-        UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
-          email: emailController.text,
-          password: passwordController.text,
-        );
-
-        // Save user data to Firebase Realtime Database
-        FirebaseDatabase database = FirebaseDatabase.instance;
-        DatabaseReference ref = database.ref('users');  // Reference to 'users' table
-
-        // Store the user data under the user's UID
-        await ref.child(userCredential.user!.uid).set({
-          'username': usernameController.text,
-          'email': emailController.text,
-          // Optional: You might not want to store password in plain text
-        });
-
-        // On success, show a snackbar
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Signup successful! Welcome ${userCredential.user?.email}')),
-        );
-
-        // Optional: Navigate to another screen after signup
-        // Navigator.pushReplacementNamed(context, '/home');
-
+        // Proceed with user registration
+        await registerUser();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Passwords do not match!")),
@@ -60,6 +37,46 @@ class _SignupScreenState extends State<SignupScreen> {
       );
     }
   }
+
+  Future<void> registerUser() async {
+    try {
+      // Create a new user with Firebase Authentication (using email/password)
+      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
+        email: emailController.text,
+        password: passwordController.text,
+      );
+
+      // Send the verification email
+      await userCredential.user?.sendEmailVerification();
+
+      // Save user data to Firebase Realtime Database
+      FirebaseDatabase database = FirebaseDatabase.instance;
+      DatabaseReference ref = database.ref('users');  // Reference to 'users' table
+
+      // Store the user data under the user's UID
+      await ref.child(userCredential.user!.uid).set({
+        'username': usernameController.text,
+        'email': emailController.text,
+      });
+
+      // On success, show a snackbar and inform the user to check their email
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Signup successful! Please check your email for verification.')),
+      );
+
+      // Sign out the user to enforce email verification
+      await _auth.signOut();
+
+      // Optionally, navigate to login screen or show instructions for email verification
+      Navigator.pushReplacementNamed(context, '/login');
+    } catch (e) {
+      // Handle errors during user registration
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error during registration: $e")),
+      );
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -194,14 +211,14 @@ class _SignupScreenState extends State<SignupScreen> {
                             ),
                           ),
                           const SizedBox(height: 20),
-                          // Create Password Input Field
+                          // Password Input Field
                           TextField(
                             controller: passwordController,
                             obscureText: true,
                             style: const TextStyle(fontSize: 14),
                             decoration: InputDecoration(
                               prefixIcon: const Icon(Icons.lock),
-                              labelText: 'Create Password',
+                              labelText: 'Password',
                               labelStyle: const TextStyle(color: Colors.blue),
                               enabledBorder: const UnderlineInputBorder(
                                 borderSide: BorderSide(color: Colors.blue),
@@ -218,7 +235,7 @@ class _SignupScreenState extends State<SignupScreen> {
                             obscureText: true,
                             style: const TextStyle(fontSize: 14),
                             decoration: InputDecoration(
-                              prefixIcon: const Icon(Icons.lock),
+                              prefixIcon: const Icon(Icons.lock_outline),
                               labelText: 'Confirm Password',
                               labelStyle: const TextStyle(color: Colors.blue),
                               enabledBorder: const UnderlineInputBorder(
@@ -229,30 +246,20 @@ class _SignupScreenState extends State<SignupScreen> {
                               ),
                             ),
                           ),
-                          const SizedBox(height: 20),
-                          // Signup Button
+                          const SizedBox(height: 40),
+                          // SignUp Button
                           ElevatedButton(
                             onPressed: signUp,
+                            child: const Text("Sign Up"),
                             style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(horizontal: 120, vertical: 10),
+                              backgroundColor: Colors.blue, // Use `backgroundColor` instead of `primary`
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(30),
                               ),
-                              backgroundColor: Colors.blue,
+                              padding: const EdgeInsets.symmetric(vertical: 16.0),
+                              minimumSize: const Size(double.infinity, 50),
                             ),
-                            child: const Text('Sign Up', style: TextStyle(fontSize: 16, color: Colors.white)),
-                          ),
-                          const SizedBox(height: 20),
-                          // Back to Login
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.pop(context); // Go back to the login screen
-                            },
-                            child: const Text(
-                              "Already have an account? Sign in",
-                              style: TextStyle(color: Colors.blue),
-                            ),
-                          ),
+                          )
                         ],
                       ),
                     ),

@@ -75,7 +75,7 @@ class _CategPoliticsState extends State<CategPolitics> {
     _fetchbbcNews();
     _fetchGoogleNews();
     _fetchnyNews();
-_fetchGnnNews();
+    _fetchGnnNews();
   }
 
   Future<void> _fetchGeoNews() async {

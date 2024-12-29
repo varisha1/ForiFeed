@@ -31,7 +31,11 @@ dependencies:
   webview_flutter: ^4.0.0 # or the latest version
   webview_flutter_android: ^3.16.2
   webview_flutter_wkwebview: ^3.13.2
-
+  image_picker: ^0.8.6
+  permission_handler: ^10.2.0
+  device_info_plus: ^9.1.2
+  flutter_rating_bar: ^4.0.1
+  intl: ^0.19.0
 
 
 dev_dependencies:
@@ -48,6 +52,9 @@ flutter:
 
   assets:
     - assets/animations/news.json
+    - assets/animations/loading_home.json
+
+    - assets/animations/i.json
     - assets/animations/loading.json
     - assets/icons.png
     - assets/geonews.png
@@ -70,4 +77,17 @@ flutter:
     - assets/images/humnews.jpg
     - assets/images/gnnnews.jpg
     - assets/images/abtaknews.jpg
+    - assets/images/br.jpg
+    - assets/images/exp.png
+    - assets/images/sg.jpg
+    - assets/images/ind.png
+    - assets/images/huff.png
+    - assets/images/gnn.jpg
+    - assets/images/cbs.png
+    - assets/images/aaj.jpg
+    - assets/images/newsint.png
+
+
+
+
 

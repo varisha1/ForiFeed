@@ -1,6 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:forif/HelpandSupportScreen.dart';
+import 'package:forif/Settings_Screen.dart';
+import 'package:forif/feedback_screen.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'News_screen2.dart';
+import 'EditProfileScreen.dart';
+import 'Privacy_screen.dart'; // Ensure this screen exists
+import 'package:firebase_auth/firebase_auth.dart';  // Add Firebase Auth import
+import 'package:firebase_core/firebase_core.dart';  // Add Firebase Core import
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(); // Initialize Firebase
   runApp(MyApp());
 }
 
@@ -8,463 +19,248 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: ProfileScreen(),
       debugShowCheckedModeBanner: false,
+      home: ProfileScreen(),
     );
   }
 }
 
-// Profile Screen
 class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Account', style: TextStyle(color: Colors.white)),
-        backgroundColor: Colors.blue,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.settings, color: Colors.white),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => SettingsScreen()),
-              );
-            },
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color(0xFF2B90B8), // Dark Blue
+              Color(0xFF2B2D42), // Greyish Blue
+              Color(0xFF6A0572), // Purple
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Profile Header
-            Container(
-              color: Colors.blue[100],
-              padding: EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 40,
-                    backgroundColor: Colors.blue[300],
-                    child: Icon(Icons.person, size: 40, color: Colors.white),
-                  ),
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              AppBar(
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                leading: IconButton(
+                  icon: Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                ),
+                actions: [
+                  Icon(Icons.settings, color: Colors.white),
                   SizedBox(width: 16),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'User Name',
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => ViewProfileScreen()),
-                          );
-                        },
-                        child: Text(
-                          'View profile',
-                          style: TextStyle(color: Colors.blue),
+                ],
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    CircleAvatar(
+                      radius: 40,
+                      backgroundImage: AssetImage('assets/images/profile.jpg'),
+                    ),
+                    SizedBox(height: 16),
+                    FutureBuilder<User?>(
+                      // Fetch current user from Firebase
+                      future: _getCurrentUser(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return CircularProgressIndicator();
+                        }
+                        if (!snapshot.hasData) {
+                          return Text('No user logged in');
+                        }
+
+                        // Extract user information from Firebase
+                        User? user = snapshot.data;
+                        return Column(
+                          children: [
+                            Text(
+                              user!.displayName ?? "",
+                              style: GoogleFonts.dmSans(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              user.email ?? "No email provided",
+                              style: GoogleFonts.dmSans(
+                                color: Colors.grey,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                    SizedBox(height: 16),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => EditProfileScreen()),
+                        );
+                      },
+                      child: Text(
+                        "Edit Profile",
+                        style: GoogleFonts.dmSans(
+                          color: Colors.grey,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
-            // Quick Access Grid
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: GridView(
-                shrinkWrap: true,
-                physics: NeverScrollableScrollPhysics(),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                ),
-                children: [
-                  _buildQuickAccessItem(Icons.favorite, 'Favorites'),
-                  _buildQuickAccessItem(Icons.bookmark, 'Bookmarks'),
-                  _buildQuickAccessItem(Icons.article, 'My Articles'),
-                ],
-              ),
-            ),
-
-            // Perks Section
-            _buildSectionHeader('Perks for you'),
-            _buildListTile(Icons.star, 'Become a pro', () {
-              // Navigate to Become a Pro screen
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => BecomeProScreen()),
-              );
-            }),
-            _buildListTile(Icons.group, 'Invite friends', () {
-              // Implement the functionality for "Invite Friends"
-            }),
-            _buildListTile(Icons.newspaper, 'Personalized News', () {
-              // Implement the functionality for "Personalized News"
-            }),
-
-            // General Section
-            _buildSectionHeader('General'),
-            _buildListTile(Icons.help, 'Help center', () {
-              // Implement the functionality for "Help Center"
-            }),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildQuickAccessItem(IconData icon, String label) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        CircleAvatar(
-          backgroundColor: Colors.blue[300],
-          radius: 30,
-          child: Icon(icon, color: Colors.white, size: 30),
-        ),
-        SizedBox(height: 8),
-        Text(label, style: TextStyle(fontSize: 14)),
-      ],
-    );
-  }
-
-  Widget _buildSectionHeader(String title) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
-      child: Text(
-        title,
-        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-      ),
-    );
-  }
-
-  Widget _buildListTile(IconData icon, String title, VoidCallback onTap) {
-    return ListTile(
-      leading: Icon(icon, color: Colors.blue),
-      title: Text(title),
-      onTap: onTap,
-    );
-  }
-}
-
-// Placeholder for SettingsScreen
-class SettingsScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Settings'),
-      ),
-      body: Center(
-        child: Text('Settings Screen - Coming Soon!'),
-      ),
-    );
-  }
-}
-
-// View Profile Screen
-class ViewProfileScreen extends StatefulWidget {
-  @override
-  _ViewProfileScreenState createState() => _ViewProfileScreenState();
-}
-
-class _ViewProfileScreenState extends State<ViewProfileScreen> {
-  String name = 'User Name';
-  String email = 'user@example.com';
-  String phone = '+123 456 789';
-  String address = '123, Main Street, City, Country';
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('View Profile'),
-        backgroundColor: Colors.blue,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: CircleAvatar(
-                radius: 50,
-                backgroundColor: Colors.blue[300],
-                child: Icon(Icons.person, size: 50, color: Colors.white),
-              ),
-            ),
-            SizedBox(height: 20),
-            Text('Name: $name', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            SizedBox(height: 10),
-            Text('Email: $email', style: TextStyle(fontSize: 16)),
-            SizedBox(height: 10),
-            Text('Phone: $phone', style: TextStyle(fontSize: 16)),
-            SizedBox(height: 10),
-            Text('Address: $address', style: TextStyle(fontSize: 16)),
-            Spacer(),
-            ElevatedButton(
-              onPressed: () async {
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => EditProfileScreen(
-                      name: name,
-                      email: email,
-                      phone: phone,
-                      address: address,
                     ),
-                  ),
-                );
-                if (result != null) {
-                  setState(() {
-                    name = result['name'];
-                    email = result['email'];
-                    phone = result['phone'];
-                    address = result['address'];
-                  });
-                }
-              },
-              child: Text('Edit Profile'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                    SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () {},
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.amber,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: Text(
+                        "Upgrade to PRO",
+                        style: GoogleFonts.dmSans(
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// Become a Pro Screen with Features
-class BecomeProScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Become a Pro'),
-        backgroundColor: Colors.blue,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'As a Pro User, you will get access to:',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 20),
-            _buildProFeatureTile(Icons.lock, 'Ad-free experience'),
-            _buildProFeatureTile(Icons.star, 'Exclusive Content'),
-            _buildProFeatureTile(Icons.notifications, 'Early access to new features'),
-            _buildProFeatureTile(Icons.chat, 'Priority support'),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                // Navigate to PaymentPlansScreen
+              Divider(color: Colors.grey[700]),
+              _buildCurvedTile(Icons.privacy_tip, "Privacy", () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => PaymentPlansScreen()),
+                  MaterialPageRoute(builder: (context) => PrivacyScreen()),
                 );
-              },
-              child: Text('Become a Pro'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-              ),
-            ),
-          ],
+              }),
+              _buildCurvedTile(Icons.history, "User Feedback / Reviews", () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => FeedbackScreen() ),
+                );
+
+              }),
+              _buildCurvedTile(Icons.help_outline, "Help & Support", () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => HelpAndSupportScreen()),
+                );
+                // Navigate to Help & Support
+              }),
+              _buildCurvedTile(Icons.settings, "Settings", () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => SettingsScreen()),
+                );
+              }),
+              _buildCurvedTile(Icons.group_add, "Invite a Friend", () {
+                // Invite functionality
+              }),
+              Divider(color: Colors.grey[700]),
+              _buildCurvedTile(Icons.logout, "Logout", () {
+                _showLogoutConfirmation(context);
+              }, isLogout: true),
+            ],
+          ),
         ),
       ),
-    );
-  }
-
-  Widget _buildProFeatureTile(IconData icon, String feature) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        children: [
-          Icon(icon, color: Colors.blue),
-          SizedBox(width: 10),
-          Expanded(child: Text(feature, style: TextStyle(fontSize: 16))),
+      bottomNavigationBar: BottomNavigationBar(
+        backgroundColor: Color(0xFF1A1A40),
+        selectedItemColor: Colors.blue,
+        unselectedItemColor: Colors.blue,
+        currentIndex: 3,
+        onTap: (index) {
+          if (index == 0) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => NewsScreen2()),
+            );
+          }
+        },
+        items: [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
+          BottomNavigationBarItem(icon: Icon(Icons.analytics), label: "Grocery"),
+          BottomNavigationBarItem(icon: Icon(Icons.wifi_off), label: "Search"),
+          BottomNavigationBarItem(icon: Icon(Icons.account_circle), label: "Account"),
         ],
       ),
     );
   }
-}
 
-// Payment Plans Screen
-class PaymentPlansScreen extends StatefulWidget {
-  @override
-  _PaymentPlansScreenState createState() => _PaymentPlansScreenState();
-}
+  Future<User?> _getCurrentUser() async {
+    FirebaseAuth auth = FirebaseAuth.instance;
+    User? user = auth.currentUser;
+    return user;
+  }
 
-class _PaymentPlansScreenState extends State<PaymentPlansScreen> {
-  String selectedPlan = '';
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Payment Plans'),
-        backgroundColor: Colors.blue,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Choose a Plan that Fits You:',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.blue[800]),
+  Widget _buildCurvedTile(IconData icon, String title, VoidCallback onTap,
+      {bool isLogout = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.grey[800],
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: ListTile(
+          leading: Icon(icon, color: isLogout ? Colors.red : Colors.white),
+          title: Text(
+            title,
+            style: GoogleFonts.dmSans(
+              color: isLogout ? Colors.red : Colors.white,
+              fontSize: 16,
             ),
-            SizedBox(height: 20),
-            _buildPlanTile('Basic Plan', '\$5/month', 'Basic features', false),
-            _buildPlanTile('Pro Plan', '\$15/month', 'Pro features', false),
-            _buildPlanTile('Premium Plan', '\$25/month', 'All features', true),
-            Spacer(),
-            ElevatedButton(
-              onPressed: () {
-                // Navigate to Payment Screen (mocked as a simple dialog for this example)
-                _showPaymentDialog(context);
-              },
-              child: Text('Proceed to Payment'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-              ),
-            ),
-          ],
+          ),
+          trailing: Icon(Icons.chevron_right, color: Colors.grey),
+          onTap: onTap,
         ),
       ),
     );
   }
 
-  Widget _buildPlanTile(String plan, String price, String description, bool isSelected) {
-    return ListTile(
-      tileColor: isSelected ? Colors.blue[50] : null,
-      title: Text(plan, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-      subtitle: Text(description),
-      trailing: Text(price),
-      onTap: () {
-        setState(() {
-          selectedPlan = plan;
-        });
-      },
-    );
-  }
-
-  void _showPaymentDialog(BuildContext context) {
+  void _showLogoutConfirmation(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Payment Confirmation'),
-        content: Text('Proceeding with the $selectedPlan.'),
-        actions: <Widget>[
+        title: Text(
+          "Logout",
+          style: GoogleFonts.dmSans(fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          "Are you sure you want to logout?",
+          style: GoogleFonts.dmSans(),
+        ),
+        actions: [
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
+              Navigator.pop(context); // Close the dialog
             },
-            child: Text('Cancel'),
+            child: Text("Cancel", style: GoogleFonts.dmSans()),
           ),
           TextButton(
             onPressed: () {
-              // Implement payment logic here
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Payment successful!')));
+              FirebaseAuth.instance.signOut();  // Log the user out
+              Navigator.pop(context); // Close dialog
+              Navigator.pop(context); // Go back to login or home screen
             },
-            child: Text('Confirm'),
+            child: Text(
+              "Logout",
+              style: GoogleFonts.dmSans(color: Colors.red),
+            ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-// Edit Profile Screen
-class EditProfileScreen extends StatefulWidget {
-  final String name;
-  final String email;
-  final String phone;
-  final String address;
-
-  EditProfileScreen({required this.name, required this.email, required this.phone, required this.address});
-
-  @override
-  _EditProfileScreenState createState() => _EditProfileScreenState();
-}
-
-class _EditProfileScreenState extends State<EditProfileScreen> {
-  late TextEditingController nameController;
-  late TextEditingController emailController;
-  late TextEditingController phoneController;
-  late TextEditingController addressController;
-
-  @override
-  void initState() {
-    super.initState();
-    nameController = TextEditingController(text: widget.name);
-    emailController = TextEditingController(text: widget.email);
-    phoneController = TextEditingController(text: widget.phone);
-    addressController = TextEditingController(text: widget.address);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Edit Profile'),
-        backgroundColor: Colors.blue,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: InputDecoration(labelText: 'Name'),
-            ),
-            TextField(
-              controller: emailController,
-              decoration: InputDecoration(labelText: 'Email'),
-            ),
-            TextField(
-              controller: phoneController,
-              decoration: InputDecoration(labelText: 'Phone'),
-            ),
-            TextField(
-              controller: addressController,
-              decoration: InputDecoration(labelText: 'Address'),
-            ),
-            Spacer(),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context, {
-                  'name': nameController.text,
-                  'email': emailController.text,
-                  'phone': phoneController.text,
-                  'address': addressController.text,
-                });
-              },
-              child: Text('Save Changes'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
